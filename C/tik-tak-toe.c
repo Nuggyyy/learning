@@ -8,6 +8,32 @@ static bool quit = false;
 
 LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam);
 
+void DrawBoard(HDC hdc, RECT *clientRect) {
+  int width = clientRect->right - clientRect->left;
+  int height = clientRect->bottom - clientRect->top;
+  int cellWidth = width / 3;
+  int cellHeight = height / 3;
+
+  // Draw grid lines
+  HPEN gridPen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+  HPEN oldPen = SelectObject(hdc, gridPen);
+
+  // Vertical lines
+  MoveToEx(hdc, cellWidth, 0, NULL);
+  LineTo(hdc, cellWidth, height);
+  MoveToEx(hdc, cellWidth * 2, 0, NULL);
+  LineTo(hdc, cellWidth * 2, height);
+
+  // Horizontal lines
+  MoveToEx(hdc, 0, cellHeight, NULL);
+  LineTo(hdc, width, cellHeight);
+  MoveToEx(hdc, 0, cellHeight * 2, NULL);
+  LineTo(hdc, width, cellHeight * 2);
+
+  SelectObject(hdc, oldPen);
+  DeleteObject(gridPen);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
                    LPSTR lpCmdLine, int nCmdShow) {
   static WNDCLASS window_class = { 0 };
@@ -18,7 +44,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
   RegisterClass(&window_class);
 
-  HWND window_handle = CreateWindow((PCSTR)window_class_name, "Tik Tak Toe", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+  HWND window_handle = 
+    CreateWindow((PCSTR)window_class_name, "Tik Tak Toe", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
   if(window_handle == NULL) { return -1; }
 
   ShowWindow(window_handle, nCmdShow);
@@ -44,6 +71,14 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
       quit = true;
     } break;
 
+    case WM_PAINT: {
+      PAINTSTRUCT ps;
+      HDC hdc = BeginPaint(window_handle, &ps);
+      RECT clientRect;
+      GetClientRect(window_handle, &clientRect);
+      DrawBoard(hdc, &clientRect);
+      EndPaint(window_handle, &ps);
+    } break;
     default: {
       return DefWindowProc(window_handle, message, wParam, lParam);
     } break;
